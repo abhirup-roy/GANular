@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import Optional
 import numpy as np
 import pandas as pd
@@ -28,7 +29,6 @@ def _center_bbox(
     is_on_bottom = y + h == img_height
 
     if is_on_left or is_on_top or is_on_right or is_on_bottom:
-        print("Skipping particle (on image edge).")
         return
 
     # new bbox center
@@ -138,6 +138,7 @@ def crop_particles(img_dir: str, max_size: float, target_size: int = 256) -> Non
     particles_processed = 0
     particles_skipped = 0
 
+    print("Starting particle cropping...")
     for jpg in jpg_files:
         # read image
         img = cv2.imread(os.path.join(img_dir, jpg), cv2.IMREAD_GRAYSCALE)
@@ -189,10 +190,12 @@ def crop_particles(img_dir: str, max_size: float, target_size: int = 256) -> Non
                 blur_bin, in_range=(127.5, 255), out_range=(0, 255)
             )
 
-            if not os.path.isdir("cropped_particles"):
-                os.makedirs("cropped_particles")
             basename = os.path.basename(img_dir)
+            if not os.path.isdir(f"cropped_particles/{basename}"):
+                os.makedirs(f"cropped_particles/{basename}")
             save_path = (
-                f"cropped_particles/{basename}_particle_{particles_processed}.png"
+                f"cropped_particles/{basename}/particle_{particles_processed}.png"
             )
             cv2.imwrite(save_path, rescaled_img)
+    warnings.warn(f"Skipped {particles_skipped} particles (on image edge).")
+    print(f"Processed {particles_processed} particles.")
